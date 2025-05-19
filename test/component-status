@@ -1,0 +1,141 @@
+<template>
+  <div class="container py-4">
+    <button class="btn btn-link mb-3" @click="goBack">← Back to My Requests</button>
+    <h4 class="fw-bold mb-4">Request Details</h4>
+
+    <div v-if="request" class="row">
+      <!-- Left Column: Request Details + Comment Box -->
+      <div class="col-md-8">
+        <div class="mb-3"><strong>Title:</strong> {{ request.title }}</div>
+        <div class="mb-3"><strong>Type:</strong> {{ request.type }}</div>
+        <div class="mb-3"><strong>Due Date:</strong> {{ request.dueDate }}</div>
+        <div class="mb-3"><strong>Request Date:</strong> {{ request.requestDate }}</div>
+        <div class="mb-3"><strong>Last Updated:</strong> {{ request.lastUpdated }}</div>
+        <div class="mb-3">
+          <strong>Status:</strong>
+          <span
+            class="badge"
+            :class="{
+              'bg-warning text-dark': request.status === 'Pending',
+              'bg-success': request.status === 'Approved',
+              'bg-danger': request.status === 'Rejected',
+            }"
+          >
+            {{ request.status }}
+          </span>
+        </div>
+
+        <!-- Comment Box -->
+        <div class="mt-4">
+          <h6>Leave a Comment</h6>
+          <textarea
+            class="form-control mb-2"
+            rows="4"
+            v-model="newComment"
+            placeholder="Write your comment..."
+          ></textarea>
+          <button class="btn btn-primary" @click="submitComment">Submit Comment</button>
+        </div>
+
+        <!-- Comment History -->
+        <div v-if="comments.length" class="mt-4">
+          <h6>Comment History</h6>
+          <ul class="list-group">
+            <li v-for="(comment, index) in comments" :key="index" class="list-group-item">
+              {{ comment }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right Column: Approvers -->
+      <div class="col-md-4">
+        <h6>Approvers</h6>
+        <ul class="list-group">
+          <li
+            v-for="(person, index) in request.approver"
+            :key="index"
+            class="list-group-item d-flex justify-content-between align-items-center"
+          >
+            {{ person.name }}
+            <span
+              class="badge"
+              :class="{
+                'bg-success': person.status === 'Approved',
+                'bg-warning text-dark': person.status === 'Pending',
+                'bg-danger': person.status === 'Rejected'
+              }"
+            >
+              {{ person.status }}
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div v-else>
+      <p>Loading...</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+interface Approver {
+  name: string
+  status: 'Approved' | 'Pending' | 'Rejected'
+}
+
+interface RequestItem {
+  id: number
+  title: string
+  type: string
+  dueDate: string
+  requestDate: string
+  lastUpdated: string
+  status: 'Pending' | 'Approved' | 'Rejected'
+  approver: Approver[]
+}
+
+const route = useRoute()
+const router = useRouter()
+
+const request = ref<RequestItem | null>(null)
+const newComment = ref('')
+const comments = ref<string[]>([])
+
+const goBack = () => {
+  router.push('/my-requests')
+}
+
+const submitComment = () => {
+  if (newComment.value.trim()) {
+    comments.value.push(newComment.value.trim())
+    newComment.value = ''
+  }
+}
+
+onMounted(() => {
+  const id = Number(route.params.id)
+
+  const mockData: RequestItem[] = [
+    {
+      id: 1,
+      title: 'Laptop Request',
+      type: 'PO',
+      dueDate: '2025-05-25',
+      requestDate: '2025-05-10',
+      lastUpdated: '2025-05-12',
+      status: 'Pending',
+      approver: [
+        { name: 'Jane Doe', status: 'Approved' },
+        { name: 'John Smith', status: 'Pending' }
+      ]
+    }
+  ]
+
+  request.value = mockData.find(item => item.id === id) || null
+})
+</script>
